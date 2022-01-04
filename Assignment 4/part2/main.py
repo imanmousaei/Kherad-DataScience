@@ -7,11 +7,12 @@ from csv import reader
 
 
 train_path = "dataset/train.csv"
+mini_train_path = "dataset/mini_train.csv"
 tmp_train_path = "dataset/tmp_train.csv"
 zeros_path = "dataset/zeros.csv"
 ones_path = "dataset/ones.csv"
 test_path = "dataset/test.csv"
-maxn = int(1e1)
+maxn = int(1e3)
 p = 0.001  # select 0.1% of the lines
 
 
@@ -35,27 +36,12 @@ def read_imbalanced_dataset():
     # we read csv line by line. And we select first `maxn` rows with label=0
     # and first `maxn` labeled 1
 
-    cnt = [0, 0]
+    # I've tried everything I can in python but it crashed. So I have to use bash. It's also so easier
+    os.system(f"head {train_path} -n 1 > {mini_train_path} ")
+    os.system(f"grep 0$ {train_path} -m {maxn} >> {mini_train_path} ")
+    os.system(f"grep 1$ {train_path} -m {maxn} >> {mini_train_path} ")
 
-    dataset = pd.read_csv(train_path, skiprows=0, nrows=1)
-    # print(row.loc[0,"is_attributed"])
-
-    i = 0
-    
-    while True:
-        try:
-            i+=1
-            indexes = [0, i]
-            row = pd.read_csv(train_path, skiprows=lambda x: x not in indexes)
-            # row = pd.read_csv(train_path, skiprows=i, nrows=1)
-            label = row.loc[0, "is_attributed"]
-            if cnt[label] < maxn:
-                cnt[label] += 1
-                print(label, cnt[label])
-                dataset = pd.concat([dataset, row])
-
-        except pd.errors.EmptyDataError:
-            break
+    dataset = pd.read_csv(mini_train_path)
 
     return dataset
 
@@ -81,7 +67,6 @@ def split_dataset(dataset: pd.DataFrame):
 
 def main():
     dataset = read_imbalanced_dataset()
-    return
     trainX, testX, trainY, testY = split_dataset(dataset)
 
     models = [
