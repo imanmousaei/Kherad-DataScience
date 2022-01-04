@@ -1,5 +1,5 @@
 import pandas as pd
-import random
+import os
 from sklearn.model_selection import train_test_split
 import classifiers
 from imblearn.under_sampling import RandomUnderSampler
@@ -7,8 +7,11 @@ from csv import reader
 
 
 train_path = "dataset/train.csv"
+tmp_train_path = "dataset/tmp_train.csv"
+zeros_path = "dataset/zeros.csv"
+ones_path = "dataset/ones.csv"
 test_path = "dataset/test.csv"
-maxn = int(1e3)
+maxn = int(1e1)
 p = 0.001  # select 0.1% of the lines
 
 
@@ -27,17 +30,49 @@ def read_dataset():
     return dataset
 
 
+def read_imbalanced_dataset():
+    # since dataset is imbalanced and also large(so cant load in my memory),
+    # we read csv line by line. And we select first `maxn` rows with label=0
+    # and first `maxn` labeled 1
+
+    cnt = [0, 0]
+
+    dataset = pd.read_csv(train_path, skiprows=0, nrows=1)
+    # print(row.loc[0,"is_attributed"])
+
+    i = 0
+    
+    while True:
+        try:
+            i+=1
+            indexes = [0, i]
+            row = pd.read_csv(train_path, skiprows=lambda x: x not in indexes)
+            # row = pd.read_csv(train_path, skiprows=i, nrows=1)
+            label = row.loc[0, "is_attributed"]
+            if cnt[label] < maxn:
+                cnt[label] += 1
+                print(label, cnt[label])
+                dataset = pd.concat([dataset, row])
+
+        except pd.errors.EmptyDataError:
+            break
+
+    return dataset
+
+
 def split_dataset(dataset: pd.DataFrame):
     # drop useless columns
     # attributed_time has data leak to test set so we remove it
-    dataset.drop(['click_time', 'attributed_time'], axis='columns', inplace=True)
+    dataset.drop(['click_time', 'attributed_time'],
+                 axis='columns', inplace=True)
 
     datasetY = dataset.loc[:, 'is_attributed']
     datasetX = dataset.drop(['is_attributed'], 'columns')
 
-    # since test set doesnt have is_attributed column(!) we split train set into train and set. 
+    # since test set doesnt have is_attributed column(!) we split train set into train and set.
     # because we want to calculate model's accuracy.
-    trainX, testX, trainY, testY = train_test_split(datasetX, datasetY, test_size=0.2, random_state=42)    
+    trainX, testX, trainY, testY = train_test_split(
+        datasetX, datasetY, test_size=0.2, random_state=42)
 
     print(trainY)
 
@@ -45,7 +80,8 @@ def split_dataset(dataset: pd.DataFrame):
 
 
 def main():
-    dataset = read_dataset()
+    dataset = read_imbalanced_dataset()
+    return
     trainX, testX, trainY, testY = split_dataset(dataset)
 
     models = [
@@ -61,7 +97,7 @@ def main():
 
     for model in models:
         report = model.report(testX, testY)
-        print(model.name,report)
+        print(model.name, report)
 
 
 if __name__ == "__main__":
