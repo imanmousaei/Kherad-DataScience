@@ -1,5 +1,5 @@
-from sklearn.datasets import load_iris
 from sklearn import linear_model, svm, neighbors, naive_bayes, tree, ensemble, neural_network, metrics
+import matplotlib.pyplot as plt
 
 
 class ClassificationModel:
@@ -16,9 +16,18 @@ class ClassificationModel:
     def report(self, testX, trueY):
         self.train()
         predictY = self.predict(testX)
-
+        # metrics.precision_recall_fscore_support
         # target_names = ['class 0', 'class 1']
         return metrics.classification_report(trueY, predictY)
+
+    def plot_confusion_matrix(self, testX, trueY):
+        predictY = self.predict(testX)
+        cm = metrics.confusion_matrix(
+            trueY, predictY, labels=self.classifier.classes_)
+        disp = metrics.ConfusionMatrixDisplay(confusion_matrix=cm,
+                                              display_labels=self.classifier.classes_)
+        disp.plot()
+        plt.show()
 
 
 class LogisticRegression(ClassificationModel):
@@ -39,7 +48,7 @@ class KNN(ClassificationModel):
     def __init__(self, trainX, trainY):
         super().__init__(trainX, trainY)
         self.name = "KNN"
-        self.classifier = neighbors.KNeighborsClassifier(n_neighbors=15)
+        self.classifier = neighbors.KNeighborsClassifier(n_neighbors=20)
 
 
 class NaiveBayes(ClassificationModel):

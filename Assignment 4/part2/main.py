@@ -2,18 +2,11 @@ import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
 import classifiers
-from imblearn.under_sampling import RandomUnderSampler
-from csv import reader
 
 
 train_path = "dataset/train.csv"
 mini_train_path = "dataset/mini_train.csv"
-tmp_train_path = "dataset/tmp_train.csv"
-zeros_path = "dataset/zeros.csv"
-ones_path = "dataset/ones.csv"
-test_path = "dataset/test.csv"
 maxn = int(1e3)
-p = 0.001  # select 0.1% of the lines
 
 
 def read_dataset():
@@ -82,7 +75,9 @@ def main():
 
     for model in models:
         report = model.report(testX, testY)
-        print(model.name, report)
+        print(model.name)
+        model.plot_confusion_matrix(testX, testY)
+        print(report)
 
 
 if __name__ == "__main__":
