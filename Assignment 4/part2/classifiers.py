@@ -134,25 +134,18 @@ class Transformer(ClassificationModel):
 
     def train(self):
         history = self.classifier.fit(
-            self.trainX, self.trainY, batch_size=32, epochs=1,
+            self.trainX, self.trainY, batch_size=32, epochs=3,
         )
 
     def plot_confusion_matrix(self, testX, trueY):
         self.train()
         probabilities = self.predict(testX)
-        labels = ["0", "1"]
 
         # now every item in probabilities is probability of 0 and 1. 
         # So we should select the higher probability label as its answer
-        predictY = []
-        for p in probabilities:
-            if p[0] > p[1]:
-                predictY.append(0)
-            else:
-                predictY.append(1)
+        predictY = [0 if p[0] > p[1] else 1 for p in probabilities]
 
         cm = metrics.confusion_matrix(trueY, predictY)
-
         disp = metrics.ConfusionMatrixDisplay(confusion_matrix=cm)
 
         disp.plot()

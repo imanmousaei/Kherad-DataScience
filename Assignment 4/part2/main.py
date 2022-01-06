@@ -10,17 +10,12 @@ maxn = int(1e3)
 
 
 def read_dataset():
-    # since my ram cant load 7GB of data (!!!) we are going we read p% of the rows of it.
-    # if random from [0,1] interval is greater than 0.01 the row will be skipped.
+    # since my ram cant load 7GB of data (!!!) we are going we read first `maxn` rows of it.
     dataset = pd.read_csv(
         train_path,
         header=0,
         nrows=maxn,
-        # skiprows=lambda i: i > 0 and random.random() > p
     )
-    # dataset = dataset.sample(maxn)
-    # dataset = pd.DataFrame(dataset.get_chunk(maxn))
-
     return dataset
 
 
@@ -63,13 +58,13 @@ def main():
     trainX, testX, trainY, testY = split_dataset(dataset)
 
     models = [
-        # classifiers.LogisticRegression(trainX, trainY),
-        # classifiers.SVM(trainX, trainY),
-        # classifiers.KNN(trainX, trainY),
-        # classifiers.NaiveBayes(trainX, trainY),
-        # classifiers.DecisionTree(trainX, trainY),
-        # classifiers.RandomForest(trainX, trainY),
-        # classifiers.NeuralNetwork(trainX, trainY),
+        classifiers.LogisticRegression(trainX, trainY),
+        classifiers.SVM(trainX, trainY),
+        classifiers.KNN(trainX, trainY),
+        classifiers.NaiveBayes(trainX, trainY),
+        classifiers.DecisionTree(trainX, trainY),
+        classifiers.RandomForest(trainX, trainY),
+        classifiers.NeuralNetwork(trainX, trainY),
         classifiers.Transformer(trainX, trainY),
     ]
 
