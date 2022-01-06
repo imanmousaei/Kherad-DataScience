@@ -1,3 +1,5 @@
+import os
+
 from sklearn import linear_model, svm, neighbors, naive_bayes, tree, ensemble, neural_network, metrics
 import matplotlib.pyplot as plt
 from tensorflow.keras import layers
@@ -113,7 +115,7 @@ class Transformer(ClassificationModel):
 
         transformer_block = transformer.TransformerBlock(
             self.embed_dim, self.num_heads, self.ff_dim)
-        
+
         layer = transformer_block(layer)
         layer = layers.GlobalAveragePooling1D()(layer)
         layer = layers.Dropout(0.1)(layer)
@@ -132,13 +134,22 @@ class Transformer(ClassificationModel):
 
     def train(self):
         history = self.classifier.fit(
-            self.trainX, self.trainY, batch_size=32, epochs=2,
+            self.trainX, self.trainY, batch_size=32, epochs=1,
         )
 
     def plot_confusion_matrix(self, testX, trueY):
         self.train()
-        predictY = self.predict(testX)
+        probabilities = self.predict(testX)
         labels = ["0", "1"]
+
+        # now every item in probabilities is probability of 0 and 1. 
+        # So we should select the higher probability label as its answer
+        predictY = []
+        for p in probabilities:
+            if p[0] > p[1]:
+                predictY.append(0)
+            else:
+                predictY.append(1)
 
         cm = metrics.confusion_matrix(trueY, predictY)
 
