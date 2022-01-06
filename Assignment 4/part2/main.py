@@ -63,15 +63,17 @@ def main():
     trainX, testX, trainY, testY = split_dataset(dataset)
 
     models = [
-        classifiers.LogisticRegression(trainX, trainY),
-        classifiers.SVM(trainX, trainY),
-        classifiers.KNN(trainX, trainY),
-        classifiers.NaiveBayes(trainX, trainY),
-        classifiers.DecisionTree(trainX, trainY),
-        classifiers.RandomForest(trainX, trainY),
-        classifiers.NeuralNetwork(trainX, trainY),
+        # classifiers.LogisticRegression(trainX, trainY),
+        # classifiers.SVM(trainX, trainY),
+        # classifiers.KNN(trainX, trainY),
+        # classifiers.NaiveBayes(trainX, trainY),
+        # classifiers.DecisionTree(trainX, trainY),
+        # classifiers.RandomForest(trainX, trainY),
+        # classifiers.NeuralNetwork(trainX, trainY),
         classifiers.Transformer(trainX, trainY),
     ]
+
+    print("______________________________________________________________________________________________")
 
     for model in models:
         report = model.report(testX, testY)
