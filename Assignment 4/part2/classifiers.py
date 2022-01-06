@@ -27,6 +27,7 @@ class ClassificationModel:
     def plot_confusion_matrix(self, testX, trueY):
         self.train()
         predictY = self.predict(testX)
+        labels = ["0", "1"]
         cm = metrics.confusion_matrix(
             trueY, predictY, labels=self.classifier.classes_)
         disp = metrics.ConfusionMatrixDisplay(confusion_matrix=cm,
@@ -91,10 +92,10 @@ class NeuralNetwork(ClassificationModel):
 
 
 class Transformer(ClassificationModel):
-    def __init__(self, trainX, trainY, vocab_size=10**7, columns=5, embed_dim=32, num_heads=2, ff_dim=32):
+    def __init__(self, trainX, trainY, vocab_size=5*10**5, columns=5, embed_dim=32, num_heads=2, ff_dim=32):
         super().__init__(trainX, trainY)
         self.name = "Transformer"
-        self.vocab_size = vocab_size   # Only consider the top 20k words
+        self.vocab_size = vocab_size   # max id of inputs
         self.columns = columns  # number of features
         self.embed_dim = embed_dim  # Embedding size for each token
         self.num_heads = num_heads  # Number of attention heads
@@ -106,14 +107,14 @@ class Transformer(ClassificationModel):
     def compile_model(self):
         inputs = layers.Input(shape=(self.columns,))
 
-        # embedding_layer = transformer.TokenAndPositionEmbedding(
-        #     self.columns, self.vocab_size, self.embed_dim)
-        # layer = embedding_layer(inputs)
+        embedding_layer = transformer.TokenAndPositionEmbedding(
+            self.columns, self.vocab_size, self.embed_dim)
+        layer = embedding_layer(inputs)
 
         transformer_block = transformer.TransformerBlock(
             self.embed_dim, self.num_heads, self.ff_dim)
         
-        layer = transformer_block(inputs)
+        layer = transformer_block(layer)
         layer = layers.GlobalAveragePooling1D()(layer)
         layer = layers.Dropout(0.1)(layer)
         layer = layers.Dense(20, activation="relu")(layer)
@@ -131,17 +132,17 @@ class Transformer(ClassificationModel):
 
     def train(self):
         history = self.classifier.fit(
-            self.trainX, self.trainY, batch_size=2, epochs=2,
+            self.trainX, self.trainY, batch_size=32, epochs=2,
         )
 
-    # def plot_confusion_matrix(self, testX, trueY):
-    #     self.train()
-    #     predictY = self.predict(testX)
-    #     labels = ["0", "1"]
+    def plot_confusion_matrix(self, testX, trueY):
+        self.train()
+        predictY = self.predict(testX)
+        labels = ["0", "1"]
 
-    #     cm = metrics.confusion_matrix(trueY, predictY)
+        cm = metrics.confusion_matrix(trueY, predictY)
 
-    #     disp = metrics.ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+        disp = metrics.ConfusionMatrixDisplay(confusion_matrix=cm)
 
-    #     disp.plot(cmap=plt.cm.Blues)
-    #     plt.show()
+        disp.plot()
+        plt.show()
