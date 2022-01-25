@@ -3,7 +3,7 @@ import numpy as np
 
 class Regressor:
 
-    def __init__(self, alpha=0.1) -> None:
+    def __init__(self) -> None:
         """
         alpha: the learning rate
         """
@@ -12,7 +12,7 @@ class Regressor:
         self.w = np.zeros((d, 1))
         self.n = n
         self.d = d
-        self.alpha = alpha
+
 
     def generate_dataset(self, n_samples, n_features):
         """
@@ -29,6 +29,7 @@ class Regressor:
         y = y.reshape(n_samples, 1)
         return X, y
 
+
     def linear_regression(self):
         """
         Performs linear regression on a dataset
@@ -37,6 +38,7 @@ class Regressor:
         """
         y = np.dot(self.X, self.w)
         return y
+
 
     def predict(self, X):
         """
@@ -48,6 +50,7 @@ class Regressor:
         y = np.dot(X, self.w).reshape(X.shape[0])
         return y
 
+
     def compute_loss(self):
         """
         Computes the MSE loss of a prediction
@@ -57,6 +60,7 @@ class Regressor:
         predictions = self.linear_regression()
         loss = np.mean((predictions - self.y)**2)
         return loss
+
 
     def compute_gradient(self):
         """
@@ -69,10 +73,11 @@ class Regressor:
         grad = 2 * np.dot(self.X.T, dif)
         return grad
 
+
     def fit(self, optimizer='gd', n_iters=1000, render_animation=False):
         """
         Trains the model
-        optimizer: the optimization algorithm to use, enum:[gd, sgd, sgdMomentum, adagrad, rmsprop, adam]
+        optimizer: the optimization algorithm to use; enum:[gd, sgd, sgdMomentum, adagrad, rmsprop, adam]
         X: a numpy.ndarray of shape (n, d) containing the dataset
         y: a numpy.ndarray of shape (n, 1) containing the labels
         n_iters: the number of iterations to train for
@@ -80,8 +85,7 @@ class Regressor:
 
         optimizer = optimizer.lower()
         figs = []
-        w = np.zeros(shape=(1, self.X.shape[1]-1))
-        b = 0
+        grads = self.compute_gradient()
 
         for i in range(1, n_iters+1):
 
@@ -89,22 +93,21 @@ class Regressor:
                 # TODO: implement gradient descent
                 pass
             elif optimizer == "sgd":
-                self.sgd_optimizer()
-                pass
+                w = self.sgd_optimizer(grads)
             elif optimizer == "sgdmomentum":
-                # TODO: Implement the SGD with momentum
-                pass
+                w = self.sgd_momentum(grads)
             elif optimizer == "adagrad":
-                # TODO: Implement Adagrad
-                pass
+                w = self.adagrad_optimizer(grads)
             elif optimizer == "rmsprop":
-                # TODO: implement RMSprop
-                pass
+                w = self.rmsprop_optimizer(grads)
             elif optimizer == "adam":
-                # TODO: implement Adam optimizer
-                pass
+                w = self.adam_optimizer(grads)
 
-            # TODO: implement the stop criterion
+            self.w = w
+
+            # the stop criterion
+            if self.compute_loss() < 0.1:
+                break
 
             if i % 10 == 0:
                 print("Iteration: ", i)
@@ -128,6 +131,7 @@ class Regressor:
             clip = ImageSequenceClip(figs, fps=5)
             clip.write_gif(f'{optimizer}_animation.gif', fps=5)
 
+
     def gradient_descent(self):
         """
         Performs gradient descent to optimize the weights
@@ -139,44 +143,47 @@ class Regressor:
 
         return w
 
-    def sgd_optimizer(self):
+
+    def sgd_optimizer(self, grads, alpha=0.01):
         """
         Performs stochastic gradient descent to optimize the weights
         Returns:
             w: a numpy.ndarray of shape (d, 1) containing the optimized weights
         """
 
-        # We keep our initial gradients as 0
-        w_gradient = np.zeros(shape=(1, self.d))
-        b_gradient = 0
-        k = self.d # or n
+        updated_w = []
 
-        for i in range(k):  # Calculating gradients for point in our K sized dataset
-            prediction = np.dot(self.w, self.x[i])+b
-            w_gradient = w_gradient+(-2)*self.x[i]*(self.y[i]-(prediction))
-            b_gradient = b_gradient+(-2)*(self.y[i]-(prediction))
+        for param, grad in zip(self.w, grads):
+            delta = alpha * grad
+            param -= delta
 
-        # Updating the weights(W) and Bias(b) with the above calculated Gradients
-        self.w = self.w-self.alpha*(w_gradient/k)
-        self.b = self.b-self.alpha*(b_gradient/k)
+            updated_w.apppend(param)
+
+        return updated_w
 
 
-        return w, b  # Returning the weights and Bias
-
-
-    def sgd_momentum(self, momentum=0.9):
+    def sgd_momentum(self, grads, alpha=0.01, momentum=0.9):
         """
         Performs SGD with momentum to optimize the weights
         momentum: the momentum
         Returns:
             w: a numpy.ndarray of shape (d, 1) containing the optimized weights
         """
-        w = None
-        # TODO: implement stochastic gradient descent
+        updated_w,  prevs = [], []
 
-        return w
+        for param, grad, prev_update in zip(self.w, grads, self.previous_updates):
+            delta = alpha * grad - momentum * prev_update
+            param -= delta
 
-    def adagrad_optimizer(self, g, epsilon):
+            prevs.append(delta)
+            updated_w.apppend(param)
+
+        self.previous_updates = prevs
+
+        return updated_w
+
+
+    def adagrad_optimizer(self, grads, g, alpha=0.01, epsilon=1e-6):
         """
         Performs Adagrad optimization to optimize the weights
         epsilon: a small number to avoid division by zero
@@ -184,12 +191,18 @@ class Regressor:
             w: a numpy.ndarray of shape (d, 1) containing the optimized weights
             ...
         """
-        w = None
-        # TODO: implement stochastic gradient descent
+        updated_w = []
 
-        return w
+        for i, (param, grad) in enumerate(zip(self.w, grads)):
+            self.cache[i] += grad ** 2
+            param += -alpha * grad / \
+                (np.sqrt(self.cache[i]) + epsilon)
 
-    def rmsprop_optimizer(self, g, beta, epsilon):
+            updated_w.apppend(param)
+
+        return updated_w
+
+    def rmsprop_optimizer(self, grads, beta=0.9, alpha=0.001, epsilon=1e-6):
         """
         Performs RMSProp optimization to optimize the weights
         g: sum of squared gradients
@@ -199,12 +212,19 @@ class Regressor:
             w: a numpy.ndarray of shape (d, 1) containing the optimized weights
             ...
         """
-        w = None
-        # TODO: implement stochastic gradient descent
+        updated_w = []
+        history = [0] * self.d
 
-        return w
+        for i, (param, grad) in enumerate(zip(self.w, grads)):
+            history[i] = beta * history[i] + (1-beta) * (grad ** 2)
+            param += - alpha * grad / (np.sqrt(history[i]) + epsilon)
 
-    def adam_optimizer(self, m, v, beta1, beta2, epsilon):
+            updated_w.append(param)
+
+        return updated_w
+
+
+    def adam_optimizer(self, grads, beta1=0.9, beta2=0.999, alpha=0.001, epsilon=1e-8):
         """
         Performs Adam optimization to optimize the weights
         m: the first moment vector
@@ -216,10 +236,21 @@ class Regressor:
             w: a numpy.ndarray of shape (d, 1) containing the optimized weights
             ...
         """
-        w = None
-        # TODO: implement stochastic gradient descent
+        updated_w = []
+        m = v = [0] * self.d
 
-        return w
+        for i, (param, grad) in enumerate(zip(self.w, grads)):
+            m[i] = beta1 * m[i] + (1-beta1) * grad
+            v[i] = beta2 * v[i] + (1-beta2) * (grad ** 2)
+            m_corrected = m[i] / (1-beta1**self.t)
+            v_corrected = v[i] / (1-beta2**self.t)
+            param += -alpha * m_corrected / (np.sqrt(v_corrected) + epsilon)
+            updated_w.append(param)
+
+        self.t += 1
+
+        return updated_w
+
 
     def plot_gradient():
         """
