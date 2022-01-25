@@ -4,9 +4,6 @@ import numpy as np
 class Regressor:
 
     def __init__(self) -> None:
-        """
-        alpha: the learning rate
-        """
         self.X, self.y = self.generate_dataset(n_samples=200, n_features=1)
         n, d = self.X.shape
         self.w = np.zeros((d, 1))
@@ -74,10 +71,10 @@ class Regressor:
         return grad
 
 
-    def fit(self, optimizer='gd', n_iters=1000, render_animation=False):
+    def fit(self, optimizer='sgd', n_iters=1000, render_animation=False):
         """
         Trains the model
-        optimizer: the optimization algorithm to use; enum:[gd, sgd, sgdMomentum, adagrad, rmsprop, adam]
+        optimizer: the optimization algorithm to use; enum:[sgd, sgdMomentum, adagrad, rmsprop, adam]
         X: a numpy.ndarray of shape (n, d) containing the dataset
         y: a numpy.ndarray of shape (n, 1) containing the labels
         n_iters: the number of iterations to train for
@@ -88,11 +85,9 @@ class Regressor:
         grads = self.compute_gradient()
 
         for i in range(1, n_iters+1):
+            w = 0
 
-            if optimizer == 'gd':
-                # TODO: implement gradient descent
-                pass
-            elif optimizer == "sgd":
+            if optimizer == "sgd":
                 w = self.sgd_optimizer(grads)
             elif optimizer == "sgdmomentum":
                 w = self.sgd_momentum(grads)
@@ -132,19 +127,7 @@ class Regressor:
             clip.write_gif(f'{optimizer}_animation.gif', fps=5)
 
 
-    def gradient_descent(self):
-        """
-        Performs gradient descent to optimize the weights
-        Returns:
-            w: a numpy.ndarray of shape (d, 1) containing the optimized weights
-        """
-        w = None
-        # TODO: implement gradient descent
-
-        return w
-
-
-    def sgd_optimizer(self, grads, alpha=0.01):
+    def sgd_optimizer(self, grads, alpha=0.1):
         """
         Performs stochastic gradient descent to optimize the weights
         Returns:
@@ -157,7 +140,7 @@ class Regressor:
             delta = alpha * grad
             param -= delta
 
-            updated_w.apppend(param)
+            updated_w.append(param)
 
         return updated_w
 
@@ -183,7 +166,7 @@ class Regressor:
         return updated_w
 
 
-    def adagrad_optimizer(self, grads, g, alpha=0.01, epsilon=1e-6):
+    def adagrad_optimizer(self, grads, alpha=0.01, epsilon=1e-6):
         """
         Performs Adagrad optimization to optimize the weights
         epsilon: a small number to avoid division by zero
@@ -238,16 +221,17 @@ class Regressor:
         """
         updated_w = []
         m = v = [0] * self.d
+        t = 1
 
         for i, (param, grad) in enumerate(zip(self.w, grads)):
             m[i] = beta1 * m[i] + (1-beta1) * grad
             v[i] = beta2 * v[i] + (1-beta2) * (grad ** 2)
-            m_corrected = m[i] / (1-beta1**self.t)
-            v_corrected = v[i] / (1-beta2**self.t)
+            m_corrected = m[i] / (1-beta1**t)
+            v_corrected = v[i] / (1-beta2**t)
             param += -alpha * m_corrected / (np.sqrt(v_corrected) + epsilon)
             updated_w.append(param)
 
-        self.t += 1
+        t += 1
 
         return updated_w
 
